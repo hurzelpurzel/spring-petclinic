@@ -1,8 +1,10 @@
+
 plugins {
   id 'java'
   id 'org.springframework.boot' version '3.1.1'
   id 'io.spring.dependency-management' version '1.1.0'
   id 'org.graalvm.buildtools.native' version '0.9.23'
+  id 'org.eclipse.jkube.kubernetes' version '1.14.0'
 }
 
 apply plugin: 'java'
@@ -41,6 +43,29 @@ dependencies {
   testImplementation 'org.testcontainers:mysql'
 }
 
+task customFatJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'org.springframework.samples.petclinic.PetClinicApplication'
+    }
+    baseName = 'all-in-one-jar'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
 tasks.named('test') {
   useJUnitPlatform()
+}
+
+kubernetes {
+    images {
+        image {
+            registry = "quay.io"
+            name = "a422171/spring-petclinic:jkube"
+            build {
+              cleanup = "remove"
+            }
+        }
+    }
+    
 }
